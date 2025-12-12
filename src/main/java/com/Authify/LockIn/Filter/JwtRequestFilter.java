@@ -43,13 +43,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String jwt = null;
         String email = null;
 
-        // 1️⃣ Check Authorization header
+        // Check Authorization header
         final String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
         }
 
-        // 2️⃣ If not found in header, check cookies
+        // If not found in header, check cookies
         if (jwt == null && request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("jwt".equals(cookie.getName())) {
@@ -59,7 +59,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
 
-        // 3️⃣ Validate token and set security context
+        // Validate token and set security context
         if (jwt != null) {
             email = jwtUtil.extractEmail(jwt);
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {

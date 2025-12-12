@@ -2,7 +2,6 @@ package com.Authify.LockIn.Service;
 
 import com.Authify.LockIn.IO.ProfileRequest;
 import com.Authify.LockIn.IO.ProfileResponse;
-import org.springframework.data.domain.PageRequest;
 
 public interface ProfileService {
      ProfileResponse createProfile(ProfileRequest request);

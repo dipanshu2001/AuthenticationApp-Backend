@@ -59,20 +59,15 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        // ✅ Correct OTP validation
         if (existingUser.getResetOtp() == null || !existingUser.getResetOtp().equals(otp)) {
             throw new RuntimeException("Invalid OTP");
         }
 
-        // ✅ Check OTP expiry
         if (existingUser.getResetOtpExpiredAt() < System.currentTimeMillis()) {
             throw new RuntimeException("OTP expired");
         }
 
-        // ✅ Update password
         existingUser.setPassword(passwordEncoder.encode(newPassword));
-
-        // ✅ Reset OTP fields after successful password reset
         existingUser.setResetOtp(null);
         existingUser.setResetOtpExpiredAt(0L);
 
@@ -85,7 +80,6 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found:" + email));
 
-        // ✅ No need to check null boolean
         if (existingUser.isAccountVerified()) {
             return;
         }
@@ -110,20 +104,18 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-        // ✅ Correct OTP validation
+
         if (existingUser.getVerifyOtp() == null || !existingUser.getVerifyOtp().equals(otp)) {
             throw new RuntimeException("Invalid OTP");
         }
 
-        // ✅ Check expiry
+
         if (existingUser.getVerifyOtpExpiredAt() < System.currentTimeMillis()) {
             throw new RuntimeException("OTP expired");
         }
 
-        // ✅ Correct boolean update
         existingUser.setAccountVerified(true);
 
-        // ✅ Clear OTP fields
         existingUser.setVerifyOtp(null);
         existingUser.setVerifyOtpExpiredAt(0L);
 

@@ -34,7 +34,7 @@ public class EmailService {
         message.setFrom(fromEmail);
         message.setTo(toEmail);
         message.setSubject("Account Verification OTP");
-        message.setText("Yout OTP is "+ otp +". Verify your account using this OTP. ");
+        message.setText("Your OTP is "+ otp +". Verify your account using this OTP. ");
         mailSender.send(message);
     }
 }

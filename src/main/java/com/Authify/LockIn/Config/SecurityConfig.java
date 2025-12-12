@@ -34,8 +34,8 @@ public class SecurityConfig {
     private final JwtRequestFilter jwtRequestFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    private final CustomOAuth2UserService oAuth2UserService; // ✅ Injected service
-    private final OAuth2SuccessHandler oAuth2SuccessHandler; // ✅ Injected handler
+    private final CustomOAuth2UserService oAuth2UserService; 
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
