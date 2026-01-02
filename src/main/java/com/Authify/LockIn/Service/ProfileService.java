@@ -11,4 +11,5 @@ public interface ProfileService {
      void sendOTP(String email);
      void verifyOTP(String email,String otp);
      String getLoggedInUserId(String email);
+     String getEmailByUserId(String userId);
 }

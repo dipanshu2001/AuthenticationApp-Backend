@@ -49,7 +49,9 @@ public class SecurityConfig {
                                 "/send-reset-otp",
                                 "/reset-password",
                                 "/logout",
-                                "/oauth2/**"
+                                "/oauth2/**",
+                                "/auth/refresh",
+                                "/is-authenticated"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth

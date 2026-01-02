@@ -30,11 +30,12 @@ public class JwtUtil {
     }
 
     private String createToken(Map<String, Object> claims, String email) {
+        long ACCESS_TOKEN_VALIDITY = 15 * 60 * 1000; // 15 minutes
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY)) // 10 hours
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

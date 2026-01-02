@@ -39,11 +39,10 @@ public class ProfileServiceImpl implements ProfileService{
 
     @Override
     public void sendResetOTP(String email) {
-        UserEntity existingEntity=userRepository.findByEmail(email).orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
-        // Generate OTP
+        UserEntity existingEntity=userRepository.findByEmail(email)
+                .orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
         String otp=String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
-        // calculate the expiry time ot OTP(current time + 24 hrs in milliseconds)
-        long expiryTime=System.currentTimeMillis()+(15*60*1000);
+        long expiryTime=System.currentTimeMillis()+(15*60*1000); // 15 minutes
         existingEntity.setResetOtp(otp);
         existingEntity.setResetOtpExpiredAt(expiryTime);
         userRepository.save(existingEntity);
@@ -109,13 +108,11 @@ public class ProfileServiceImpl implements ProfileService{
             throw new RuntimeException("Invalid OTP");
         }
 
-
         if (existingUser.getVerifyOtpExpiredAt() < System.currentTimeMillis()) {
             throw new RuntimeException("OTP expired");
         }
 
         existingUser.setAccountVerified(true);
-
         existingUser.setVerifyOtp(null);
         existingUser.setVerifyOtpExpiredAt(0L);
 
@@ -128,6 +125,13 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity existingUser=userRepository.findByEmail(email)
                 .orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
         return existingUser.getUserID();
+    }
+
+    @Override
+    public String getEmailByUserId(String userId) {
+        UserEntity user = userRepository.findByUserID(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
+        return user.getEmail();
     }
 
     private ProfileResponse convertToProfileResponse(UserEntity newProfile) {
@@ -150,6 +154,7 @@ public class ProfileServiceImpl implements ProfileService{
                 .verifyOtp(null)
                 .verifyOtpExpiredAt(0L)
                 .resetOtp(null)
+                .role("ROLE_USER")
                 .build();
     }
 

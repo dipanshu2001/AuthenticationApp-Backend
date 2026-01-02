@@ -1,8 +1,10 @@
 package com.Authify.LockIn.Controller;
 
+import com.Authify.LockIn.Entity.RefreshToken;
 import com.Authify.LockIn.IO.ApiResponse;
 import com.Authify.LockIn.IO.ResetPasswordRequest;
 import com.Authify.LockIn.Service.ProfileService;
+import com.Authify.LockIn.Service.RefreshTokenService;
 import com.Authify.LockIn.Util.JwtUtil;
 import com.Authify.LockIn.IO.AuthRequest;
 import com.Authify.LockIn.IO.AuthResponse;
@@ -31,42 +33,54 @@ public class AuthController {
     private final AppUserDetailService appUserDetailService;
     private final JwtUtil jwtUtil;
     private final ProfileService profileService;
+    private final RefreshTokenService refreshTokenService;
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request){
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
             authenticate(request.getEmail(), request.getPassword());
 
-            final UserDetails userDetails = appUserDetailService.loadUserByUsername(request.getEmail());
-            final String jwtToken = jwtUtil.generateToken(userDetails);
+            UserDetails userDetails = appUserDetailService.loadUserByUsername(request.getEmail());
+            String accessToken = jwtUtil.generateToken(userDetails);
 
-            ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
+            // 1) Create refresh token entry in DB
+            String userId = profileService.getLoggedInUserId(request.getEmail());
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
+
+            // 2) Access token cookie (short‑lived)
+            ResponseCookie accessCookie = ResponseCookie.from("jwt", accessToken)
                     .httpOnly(true)
                     .path("/")
-                    .maxAge(Duration.ofDays(1))
+                    .maxAge(Duration.ofMinutes(15))
                     .sameSite("strict")
                     .build();
 
-            AuthResponse authData = new AuthResponse(request.getEmail(), jwtToken);
+            // 3) Refresh token cookie (long‑lived)
+            ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
+                    .httpOnly(true)
+                    .path("/auth")           // restrict to /auth endpoints if you like
+                    .maxAge(Duration.ofDays(7))
+                    .sameSite("strict")
+                    .build();
+
+            AuthResponse authData = new AuthResponse(request.getEmail(), accessToken);
             ApiResponse<AuthResponse> response = new ApiResponse<>("Login successful", authData);
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                     .body(response);
-        }
-        catch (BadCredentialsException e){
+        } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse("Email or Password is incorrect",null));
-        }
-        catch (DisabledException e){
-
+                    .body(new ApiResponse<>("Email or Password is incorrect", null));
+        } catch (DisabledException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse("Account is disabled",null));
-        }
-        catch (Exception e){
+                    .body(new ApiResponse<>("Account is disabled", null));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse("Authentication Failed",null));
+                    .body(new ApiResponse<>("Authentication Failed", null));
         }
     }
+
 
     private void authenticate(String email,String password){
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email,password));
@@ -100,17 +114,69 @@ public class AuthController {
         return new ApiResponse<>("Email verified successfully",null);
     }
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+    public ResponseEntity<?> logout(
+            @CookieValue(name = "refresh_token", required = false) String refreshTokenValue) {
+
+        if (refreshTokenValue != null) {
+            refreshTokenService.revokeToken(refreshTokenValue);
+        }
+
+        ResponseCookie clearAccess = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
                 .path("/")
                 .maxAge(0)
                 .sameSite("strict")
                 .build();
+
+        ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .path("/auth")
+                .maxAge(0)
+                .sameSite("strict")
+                .build();
+
         ApiResponse<Void> response = new ApiResponse<>("Logged out successfully", null);
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, clearRefresh.toString())
                 .body(response);
     }
+
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<?> refreshToken(
+            @CookieValue(name = "refresh_token", required = false) String refreshTokenValue) {
+
+        if (refreshTokenValue == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("Refresh token missing", null));
+        }
+
+        return refreshTokenService.validateRefreshToken(refreshTokenValue)
+                .map(rt -> {
+                    // You stored userId in refresh token, need the email to build UserDetails
+                    String userId = rt.getUserId();
+                    // Add a method in ProfileService / ProfileServiceImpl:
+                    // String email = profileService.getEmailByUserId(userId);
+                    String email = profileService.getEmailByUserId(userId);
+
+                    UserDetails userDetails = appUserDetailService.loadUserByUsername(email);
+                    String newAccessToken = jwtUtil.generateToken(userDetails);
+
+                    ResponseCookie accessCookie = ResponseCookie.from("jwt", newAccessToken)
+                            .httpOnly(true)
+                            .path("/")
+                            .maxAge(Duration.ofMinutes(15))
+                            .sameSite("strict")
+                            .build();
+
+                    AuthResponse data = new AuthResponse(email, newAccessToken);
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                            .body(new ApiResponse<>("Token refreshed", data));
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>("Invalid or expired refresh token", null)));
+    }
+
 
 }
