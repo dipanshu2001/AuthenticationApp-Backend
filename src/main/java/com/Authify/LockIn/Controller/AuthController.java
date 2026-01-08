@@ -42,11 +42,11 @@ public class AuthController {
             UserDetails userDetails = appUserDetailService.loadUserByUsername(request.getEmail());
             String accessToken = jwtUtil.generateToken(userDetails);
 
-            // 1) Create refresh token entry in DB
+            // Create refresh token entry in DB
             String userId = profileService.getLoggedInUserId(request.getEmail());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
 
-            // 2) Access token cookie (short‑lived)
+            // Access token cookie (short‑lived)
             ResponseCookie accessCookie = ResponseCookie.from("jwt", accessToken)
                     .httpOnly(true)
                     .path("/")
@@ -54,10 +54,10 @@ public class AuthController {
                     .sameSite("strict")
                     .build();
 
-            // 3) Refresh token cookie (long‑lived)
+            // Refresh token cookie (long‑lived)
             ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                     .httpOnly(true)
-                    .path("/auth")           // restrict to /auth endpoints if you like
+                    .path("/auth")           
                     .maxAge(Duration.ofDays(7))
                     .sameSite("strict")
                     .build();
@@ -153,10 +153,7 @@ public class AuthController {
 
         return refreshTokenService.validateRefreshToken(refreshTokenValue)
                 .map(rt -> {
-                    // You stored userId in refresh token, need the email to build UserDetails
                     String userId = rt.getUserId();
-                    // Add a method in ProfileService / ProfileServiceImpl:
-                    // String email = profileService.getEmailByUserId(userId);
                     String email = profileService.getEmailByUserId(userId);
 
                     UserDetails userDetails = appUserDetailService.loadUserByUsername(email);
