@@ -48,17 +48,15 @@ public class AuthController {
 
             String userId = profileService.getLoggedInUserId(request.getEmail());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
-
             ResponseCookie accessCookie = ResponseCookie.from("jwt", accessToken)
                     .httpOnly(true)
                     .path("/")
                     .maxAge(Duration.ofMinutes(15))
                     .sameSite("strict")
                     .build();
-
-            // Refresh token cookie (long‑lived)
             ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                     .httpOnly(true)
+                    .path("/auth")
                     .path("/auth")
                     .maxAge(Duration.ofDays(7))
                     .sameSite("strict")

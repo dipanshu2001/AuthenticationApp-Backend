@@ -21,13 +21,12 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // store user by email or userID; userID is better
     private String userId;
 
     @Column(unique = true, nullable = false)
-    private String token;      // random string (or hash)
+    private String token;
 
-    private long expiresAt;    // millis
+    private long expiresAt;
 
     private boolean revoked;
 
