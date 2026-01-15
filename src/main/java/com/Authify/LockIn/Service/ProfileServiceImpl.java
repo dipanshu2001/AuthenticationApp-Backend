@@ -3,6 +3,7 @@ package com.Authify.LockIn.Service;
 import com.Authify.LockIn.Entity.UserEntity;
 import com.Authify.LockIn.IO.ProfileRequest;
 import com.Authify.LockIn.IO.ProfileResponse;
+import com.Authify.LockIn.IO.ProfileUpdateRequest;
 import com.Authify.LockIn.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -132,6 +133,17 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity user = userRepository.findByUserID(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + userId));
         return user.getEmail();
+    }
+
+    @Override
+    public ProfileResponse updateProfile(String email, ProfileUpdateRequest request) {
+        UserEntity user=userRepository.findByEmail(email)
+                .orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
+        if(request.getName()!=null && !request.getName().isBlank()){
+            user.setName(request.getName());
+        }
+        userRepository.save(user);
+        return convertToProfileResponse(user);
     }
 
     private ProfileResponse convertToProfileResponse(UserEntity newProfile) {

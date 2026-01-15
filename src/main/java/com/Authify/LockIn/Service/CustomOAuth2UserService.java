@@ -22,7 +22,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = (String) attributes.get("email");
         String name = (String) attributes.get("name");
 
-        userRepository.findByEmail(email).orElseGet(() -> {
+        UserEntity user=userRepository.findByEmail(email).orElseGet(() -> {
             UserEntity newUser = UserEntity.builder()
                     .email(email)
                     .name(name)
@@ -33,7 +33,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .build();
             return userRepository.save(newUser);
         });
-
+        System.out.println("OAuth2 User created/loaded: " + email + ", role: " + user.getRole());
         return oAuth2User;
     }
 }

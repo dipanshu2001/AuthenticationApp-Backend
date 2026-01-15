@@ -44,23 +44,20 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/login",
-                                "/register",
-                                "/send-reset-otp",
-                                "/reset-password",
-                                "/logout",
-                                "/oauth2/**",
-                                "/auth/refresh",
-                                "/is-authenticated"
+                                "/api/v1.0/oauth2/**",
+                                "/api/v1.0/login/oauth2/code/**").permitAll()
+                        .requestMatchers(
+                                "/api/v1.0/profile/register", "/api/v1.0/auth/login",
+                                "/api/v1.0/auth/send-reset-otp", "/api/v1.0/auth/reset-password",
+                                "/api/v1.0/auth/logout", "/api/v1.0/auth/refresh", "/api/v1.0/auth/is-authenticated"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth
-                        .loginPage("/login")
                         .userInfoEndpoint(userInfo -> userInfo.userService(oAuth2UserService))
                         .successHandler(oAuth2SuccessHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .logout(AbstractHttpConfigurer::disable)
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint));
 
         return http.build();
@@ -98,4 +95,3 @@ public class SecurityConfig {
         return new ProviderManager(authenticationProvider);
     }
 }
-

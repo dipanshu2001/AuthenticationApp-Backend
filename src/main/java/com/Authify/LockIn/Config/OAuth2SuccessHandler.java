@@ -1,5 +1,6 @@
 package com.Authify.LockIn.Config;
 
+import com.Authify.LockIn.Entity.UserEntity;
 import com.Authify.LockIn.Util.JwtUtil;
 import com.Authify.LockIn.Repository.UserRepository;
 import jakarta.servlet.ServletException;
@@ -23,17 +24,25 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
+
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
+        // Fix 1: Load user from DB for correct role
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("OAuth2 user not found: " + email));
+
+        // Fix 2: Use DB role ("ROLE_USER") instead of hardcoded "USER"
         String jwtToken = jwtUtil.generateToken(
                 org.springframework.security.core.userdetails.User
                         .withUsername(email)
                         .password("")
-                        .authorities("USER")
+                        .authorities(user.getRole())  // "ROLE_USER" from DB
                         .build()
         );
 
+        System.out.println("OAuth2 Success - Redirecting with token for: " + email); // Debug log
         response.sendRedirect("http://localhost:5173/oauth-success?token=" + jwtToken);
     }
+
 }
