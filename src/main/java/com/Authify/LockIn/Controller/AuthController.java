@@ -46,11 +46,9 @@ public class AuthController {
             UserDetails userDetails = appUserDetailService.loadUserByUsername(request.getEmail());
             String accessToken = jwtUtil.generateToken(userDetails);
 
-            // Create refresh token entry in DB
             String userId = profileService.getLoggedInUserId(request.getEmail());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
 
-            // Access token cookie (short‑lived)
             ResponseCookie accessCookie = ResponseCookie.from("jwt", accessToken)
                     .httpOnly(true)
                     .path("/")
@@ -220,7 +218,6 @@ public class AuthController {
 
         userRepository.delete(user);
 
-        // clear cookies
         ResponseCookie clearAccess = ResponseCookie.from("jwt", "")
                 .httpOnly(true).path("/").maxAge(0).sameSite("strict").build();
         ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")

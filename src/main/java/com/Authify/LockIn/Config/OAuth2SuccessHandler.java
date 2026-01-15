@@ -28,20 +28,16 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
-        // Fix 1: Load user from DB for correct role
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("OAuth2 user not found: " + email));
 
-        // Fix 2: Use DB role ("ROLE_USER") instead of hardcoded "USER"
         String jwtToken = jwtUtil.generateToken(
                 org.springframework.security.core.userdetails.User
                         .withUsername(email)
                         .password("")
-                        .authorities(user.getRole())  // "ROLE_USER" from DB
+                        .authorities(user.getRole())
                         .build()
         );
-
-        System.out.println("OAuth2 Success - Redirecting with token for: " + email); // Debug log
         response.sendRedirect("http://localhost:5173/oauth-success?token=" + jwtToken);
     }
 

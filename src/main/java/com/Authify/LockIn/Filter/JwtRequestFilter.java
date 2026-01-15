@@ -38,7 +38,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             "/api/v1.0/auth/is-authenticated"
     );
 
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();  // <-- CORRECT CLASS
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
