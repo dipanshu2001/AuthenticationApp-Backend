@@ -28,6 +28,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
+        if (email == null) {
+            throw new RuntimeException("Email not found in OAuth2 user attributes");
+        }
+
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("OAuth2 user not found: " + email));
 

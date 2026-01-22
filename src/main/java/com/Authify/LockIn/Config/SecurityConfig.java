@@ -47,9 +47,13 @@ public class SecurityConfig {
                                 "/api/v1.0/oauth2/**",
                                 "/api/v1.0/login/oauth2/code/**").permitAll()
                         .requestMatchers(
-                                "/api/v1.0/profile/register", "/api/v1.0/auth/login",
-                                "/api/v1.0/auth/send-reset-otp", "/api/v1.0/auth/reset-password",
-                                "/api/v1.0/auth/logout", "/api/v1.0/auth/refresh", "/api/v1.0/auth/is-authenticated"
+                                "/api/v1.0/profile/register",
+                                "/api/v1.0/auth/login",
+                                "/api/v1.0/auth/refresh",
+                                "/api/v1.0/auth/send-reset-otp",
+                                "/api/v1.0/auth/reset-password",
+                                "/api/v1.0/auth/logout",
+                                "/api/v1.0/auth/is-authenticated"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth -> oauth

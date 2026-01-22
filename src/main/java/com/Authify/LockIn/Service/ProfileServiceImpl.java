@@ -34,7 +34,7 @@ public class ProfileServiceImpl implements ProfileService{
     @Override
     public ProfileResponse getProfile(String email) {
         UserEntity existingUser=userRepository.findByEmail(email)
-                .orElseThrow(()->new UsernameNotFoundException("User not found"+email));
+                .orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
         return convertToProfileResponse(existingUser);
     }
 
@@ -78,7 +78,7 @@ public class ProfileServiceImpl implements ProfileService{
     @Override
     public void sendOTP(String email) {
         UserEntity existingUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found:" + email));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
         if (existingUser.isAccountVerified()) {
             return;

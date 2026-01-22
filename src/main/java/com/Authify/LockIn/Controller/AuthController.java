@@ -57,7 +57,6 @@ public class AuthController {
             ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                     .httpOnly(true)
                     .path("/auth")
-                    .path("/auth")
                     .maxAge(Duration.ofDays(7))
                     .sameSite("strict")
                     .build();
@@ -86,7 +85,7 @@ public class AuthController {
     }
     @GetMapping("/is-authenticated")
     public ResponseEntity<?> isAuthenticated(@CurrentSecurityContext(expression = "authentication?.name")String email){
-        return ResponseEntity.ok(new ApiResponse(" Authentication status fetched",email!=null));
+        return ResponseEntity.ok(new ApiResponse<>(" Authentication status fetched",email!=null));
     }
     @PostMapping("/send-reset-otp")
     public ApiResponse<Void> sendResetOTP(@RequestParam String email){

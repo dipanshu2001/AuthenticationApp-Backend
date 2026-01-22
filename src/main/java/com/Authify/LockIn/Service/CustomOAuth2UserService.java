@@ -22,6 +22,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = (String) attributes.get("email");
         String name = (String) attributes.get("name");
 
+        if (email == null) {
+            throw new RuntimeException("Email not found in OAuth2 user attributes");
+        }
+
         UserEntity user=userRepository.findByEmail(email).orElseGet(() -> {
             UserEntity newUser = UserEntity.builder()
                     .email(email)

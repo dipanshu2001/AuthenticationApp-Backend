@@ -3,7 +3,6 @@ package com.Authify.LockIn.Service;
 import com.Authify.LockIn.Entity.UserEntity;
 import com.Authify.LockIn.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.annotations.SecondaryRow;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -12,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,7 +21,7 @@ public class AppUserDetailService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         UserEntity existingUser=userRepository.findByEmail(email)
-                .orElseThrow(()->new UsernameNotFoundException("User not found for the email"+email));
+                .orElseThrow(()->new UsernameNotFoundException("User not found for the email: "+email));
         GrantedAuthority authority = new SimpleGrantedAuthority(existingUser.getRole());
 
         return new User(

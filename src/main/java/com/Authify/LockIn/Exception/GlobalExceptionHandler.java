@@ -12,7 +12,9 @@ public class GlobalExceptionHandler {
     // Validation errors (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationError(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getFieldError().getDefaultMessage();
+        String errorMessage = ex.getBindingResult().getFieldError() != null
+                ? ex.getBindingResult().getFieldError().getDefaultMessage()
+                : "Validation failed";
         return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(errorMessage, null));
     }
