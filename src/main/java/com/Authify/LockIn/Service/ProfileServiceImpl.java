@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
@@ -39,19 +40,22 @@ public class ProfileServiceImpl implements ProfileService{
     }
 
     @Override
+    @Transactional
     public void sendResetOTP(String email) {
         UserEntity existingEntity=userRepository.findByEmail(email)
                 .orElseThrow(()->new UsernameNotFoundException("User not found: "+email));
+
         String otp=String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
         long expiryTime=System.currentTimeMillis()+(15*60*1000); // 15 minutes
-        existingEntity.setResetOtp(otp);
-        existingEntity.setResetOtpExpiredAt(expiryTime);
-        userRepository.save(existingEntity);
+
         try{
             emailService.sendResetOTPEmail(existingEntity.getEmail(),otp);
         }catch (Exception e){
             throw new RuntimeException("Unable to send email");
         }
+        existingEntity.setResetOtp(otp);
+        existingEntity.setResetOtpExpiredAt(expiryTime);
+        userRepository.save(existingEntity);
     }
 
     @Override

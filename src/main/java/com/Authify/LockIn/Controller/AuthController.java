@@ -29,7 +29,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/auth")
+@RequestMapping("/v1.0/auth")
 public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AppUserDetailService appUserDetailService;
@@ -104,11 +104,11 @@ public class AuthController {
         return new ApiResponse<>("Verification OTP sent successfully",null);
     }
     @PostMapping("/verify-otp")
-    public ApiResponse<Void> verifyEmail(@RequestBody Map<String,Object>request,@CurrentSecurityContext(expression = "authentication?.name")String email){
-        if(request.get("otp")==null){
+    public ApiResponse<Void> verifyEmail(@Valid @RequestBody VerifyOTPRequest request,@CurrentSecurityContext(expression = "authentication?.name")String email){
+        if(request.getOtp()==null){
             throw new RuntimeException("OTP missing!");
         }
-        profileService.verifyOTP(email,request.get("otp").toString());
+        profileService.verifyOTP(email,request.getOtp().toString());
         return new ApiResponse<>("Email verified successfully",null);
     }
     @PostMapping("/logout")

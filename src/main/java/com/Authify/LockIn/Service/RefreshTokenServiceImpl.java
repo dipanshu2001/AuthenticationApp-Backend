@@ -4,6 +4,7 @@ import com.Authify.LockIn.Entity.RefreshToken;
 import com.Authify.LockIn.Repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
     }
 
     @Override
+    @Transactional
     public void revokeToken(String token) {
         refreshTokenRepository.findByToken(token).ifPresent(rt -> {
             rt.setRevoked(true);

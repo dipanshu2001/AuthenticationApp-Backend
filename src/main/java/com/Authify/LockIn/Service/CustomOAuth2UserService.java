@@ -32,8 +32,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .name(name)
                     .userID(UUID.randomUUID().toString())
                     .isAccountVerified(true)
-                    .password("") // no password for Google users
-                    .role("ROLE_USER") // default role for OAuth users
+                    .password(UUID.randomUUID().toString())
+                    .role("ROLE_USER")
                     .build();
             return userRepository.save(newUser);
         });
