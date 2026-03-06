@@ -59,6 +59,7 @@ public class ProfileServiceImpl implements ProfileService{
     }
 
     @Override
+    @Transactional
     public void resetPassword(String email, String otp, String newPassword) {
         UserEntity existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
@@ -78,7 +79,6 @@ public class ProfileServiceImpl implements ProfileService{
         userRepository.save(existingUser);
     }
 
-
     @Override
     public void sendOTP(String email) {
         UserEntity existingUser = userRepository.findByEmail(email)
@@ -93,17 +93,17 @@ public class ProfileServiceImpl implements ProfileService{
 
         existingUser.setVerifyOtp(otp);
         existingUser.setVerifyOtpExpiredAt(expiryTime);
-        userRepository.save(existingUser);
-
         try {
             emailService.sendOtpEmail(existingUser.getEmail(), otp);
         } catch (Exception e) {
             throw new RuntimeException("Unable to send email");
         }
+        userRepository.save(existingUser);
     }
 
 
     @Override
+    @Transactional
     public void verifyOTP(String email, String otp) {
         UserEntity existingUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));

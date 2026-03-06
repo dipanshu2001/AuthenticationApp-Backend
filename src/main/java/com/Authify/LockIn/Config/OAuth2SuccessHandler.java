@@ -47,10 +47,8 @@ private final RefreshTokenService refreshTokenService;
                         .authorities(user.getRole())
                         .build()
         );
-        // ✅ Create refresh token (just like regular login)
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserID());
 
-        // ✅ Set JWT cookie
         ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .secure(true)
@@ -59,19 +57,18 @@ private final RefreshTokenService refreshTokenService;
                 .sameSite("Strict")
                 .build();
 
-        // ✅ Set refresh token cookie
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                 .httpOnly(true)
                 .secure(true)
                 .path("/auth")
-                .maxAge(Duration.ofDays(7))  // ✅ Now OAuth users also stay logged in 7 days!
+                .maxAge(Duration.ofDays(7))
                 .sameSite("Strict")
                 .build();
 
         // Add both cookies
         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-        response.sendRedirect("http://localhost:5173/oauth-success?token=" + jwtToken);
+        response.sendRedirect("http://localhost:5173/oauth-success");
     }
 
 }

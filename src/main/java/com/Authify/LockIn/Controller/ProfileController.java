@@ -24,7 +24,6 @@ public class ProfileController {
             emailService.sendWelcomeEmail(response.getEmail(),response.getName());
             return new ApiResponse<>("User registered successfully! Welcome email sent.",response);
         } catch (Exception e) {
-            // User is already created, so return success even if email fails
             return new ApiResponse<>("User registered successfully! Welcome email could not be sent.",response);
         }
     }
