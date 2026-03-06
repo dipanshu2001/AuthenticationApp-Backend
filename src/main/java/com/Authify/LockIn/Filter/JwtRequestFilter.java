@@ -27,15 +27,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     private static final List<String> PUBLIC_URLS = List.of(
-            "/api/v1.0/profile/register",
-            "/api/v1.0/auth/login",
-            "/api/v1.0/auth/send-reset-otp",
-            "/api/v1.0/auth/reset-password",
-            "/api/v1.0/auth/logout",
-            "/api/v1.0/oauth2/**",
-            "/api/v1.0/login/oauth2/code/**",
-            "/api/v1.0/auth/refresh",
-            "/api/v1.0/auth/is-authenticated"
+            "/v1.0/profile/register",
+            "/v1.0/auth/login",
+            "/v1.0/auth/send-reset-otp",
+            "/v1.0/auth/reset-password",
+            "/v1.0/auth/logout",
+            "/v1.0/oauth2/**",
+            "/v1.0/login/oauth2/code/**",
+            "/v1.0/auth/refresh",
+            "/v1.0/auth/is-authenticated"
     );
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
