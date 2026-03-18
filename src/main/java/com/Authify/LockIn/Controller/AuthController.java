@@ -25,7 +25,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +37,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
@@ -48,17 +48,21 @@ public class AuthController {
 
             String userId = profileService.getLoggedInUserId(request.getEmail());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userId);
+
             ResponseCookie accessCookie = ResponseCookie.from("jwt", accessToken)
                     .httpOnly(true)
+                    .secure(false)
                     .path("/")
                     .maxAge(Duration.ofMinutes(15))
-                    .sameSite("strict")
+                    .sameSite("Lax")
                     .build();
+
             ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                     .httpOnly(true)
-                    .path("/auth")
+                    .secure(false)
+                    .path("/api/v1.0/auth")   // includes context-path prefix
                     .maxAge(Duration.ofDays(7))
-                    .sameSite("strict")
+                    .sameSite("Lax")
                     .build();
 
             AuthResponse authData = new AuthResponse(request.getEmail(), accessToken);
@@ -68,6 +72,7 @@ public class AuthController {
                     .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                     .body(response);
+
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>("Email or Password is incorrect", null));
@@ -80,37 +85,46 @@ public class AuthController {
         }
     }
 
-    private void authenticate(String email,String password){
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email,password));
+    private void authenticate(String email, String password) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
     }
-    @GetMapping("/is-authenticated")
-    public ResponseEntity<?> isAuthenticated(@CurrentSecurityContext(expression = "authentication?.name")String email){
-        return ResponseEntity.ok(new ApiResponse<>(" Authentication status fetched",email!=null));
-    }
-    @PostMapping("/send-reset-otp")
-    public ApiResponse<Void> sendResetOTP(@RequestParam String email){
-        profileService.sendResetOTP(email);
-        return new ApiResponse<>("Reset OTP sent to "+email,null);
-    }
-    @PostMapping("/reset-password")
-    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request){
-        profileService.resetPassword(request.getEmail(),request.getOtp(), request.getNewPassword());
-        return new ApiResponse<>("Password reset successful",null);
 
+    @GetMapping("/is-authenticated")
+    public ResponseEntity<?> isAuthenticated(
+            @CurrentSecurityContext(expression = "authentication?.name") String email) {
+        return ResponseEntity.ok(new ApiResponse<>("Authentication status fetched", email != null));
     }
+
+    @PostMapping("/send-reset-otp")
+    public ApiResponse<Void> sendResetOTP(@RequestParam String email) {
+        profileService.sendResetOTP(email);
+        return new ApiResponse<>("Reset OTP sent to " + email, null);
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        profileService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
+        return new ApiResponse<>("Password reset successful", null);
+    }
+
     @PostMapping("/send-otp")
-    public ApiResponse<Void> sendVerifyOtp(@CurrentSecurityContext(expression = "authentication?.name")String email){
+    public ApiResponse<Void> sendVerifyOtp(
+            @CurrentSecurityContext(expression = "authentication?.name") String email) {
         profileService.sendOTP(email);
-        return new ApiResponse<>("Verification OTP sent successfully",null);
+        return new ApiResponse<>("Verification OTP sent successfully", null);
     }
+
     @PostMapping("/verify-otp")
-    public ApiResponse<Void> verifyEmail(@Valid @RequestBody VerifyOTPRequest request,@CurrentSecurityContext(expression = "authentication?.name")String email){
-        if(request.getOtp()==null){
+    public ApiResponse<Void> verifyEmail(
+            @Valid @RequestBody VerifyOTPRequest request,
+            @CurrentSecurityContext(expression = "authentication?.name") String email) {
+        if (request.getOtp() == null) {
             throw new RuntimeException("OTP missing!");
         }
-        profileService.verifyOTP(email,request.getOtp().toString());
-        return new ApiResponse<>("Email verified successfully",null);
+        profileService.verifyOTP(email, request.getOtp());
+        return new ApiResponse<>("Email verified successfully", null);
     }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
             @CookieValue(name = "refresh_token", required = false) String refreshTokenValue) {
@@ -121,23 +135,24 @@ public class AuthController {
 
         ResponseCookie clearAccess = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
+                .secure(false)
                 .path("/")
                 .maxAge(0)
-                .sameSite("strict")
+                .sameSite("Lax")
                 .build();
 
         ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .path("/auth")
+                .secure(false)
+                .path("/api/v1.0/auth")   // must match the path it was set with
                 .maxAge(0)
-                .sameSite("strict")
+                .sameSite("Lax")
                 .build();
 
-        ApiResponse<Void> response = new ApiResponse<>("Logged out successfully", null);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
                 .header(HttpHeaders.SET_COOKIE, clearRefresh.toString())
-                .body(response);
+                .body(new ApiResponse<>("Logged out successfully", null));
     }
 
     @PostMapping("/refresh")
@@ -159,9 +174,10 @@ public class AuthController {
 
                     ResponseCookie accessCookie = ResponseCookie.from("jwt", newAccessToken)
                             .httpOnly(true)
+                            .secure(false)
                             .path("/")
                             .maxAge(Duration.ofMinutes(15))
-                            .sameSite("strict")
+                            .sameSite("Lax")
                             .build();
 
                     AuthResponse data = new AuthResponse(email, newAccessToken);
@@ -172,6 +188,7 @@ public class AuthController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>("Invalid or expired refresh token", null)));
     }
+
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
             @CurrentSecurityContext(expression = "authentication?.name") String email,
@@ -189,12 +206,14 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse<>("Current password is incorrect", null));
         }
+
         user.setPassword(passwordEncoder.encode(body.getNewPassword()));
         userRepository.save(user);
         refreshTokenService.revokeAllForUser(user.getUserID());
 
         return ResponseEntity.ok(new ApiResponse<>("Password changed successfully", null));
     }
+
     @PostMapping("/account/delete")
     public ResponseEntity<?> deleteAccount(
             @CurrentSecurityContext(expression = "authentication?.name") String email,
@@ -216,14 +235,24 @@ public class AuthController {
         userRepository.delete(user);
 
         ResponseCookie clearAccess = ResponseCookie.from("jwt", "")
-                .httpOnly(true).path("/").maxAge(0).sameSite("strict").build();
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
         ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")
-                .httpOnly(true).path("/auth").maxAge(0).sameSite("strict").build();
+                .httpOnly(true)
+                .secure(false)
+                .path("/api/v1.0/auth")   // must match the path it was set with
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
                 .header(HttpHeaders.SET_COOKIE, clearRefresh.toString())
                 .body(new ApiResponse<>("Account deleted successfully", null));
     }
-
 }

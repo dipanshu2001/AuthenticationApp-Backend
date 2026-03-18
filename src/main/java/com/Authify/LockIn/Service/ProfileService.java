@@ -14,4 +14,7 @@ public interface ProfileService {
      String getLoggedInUserId(String email);
      String getEmailByUserId(String userId);
      ProfileResponse updateProfile(String email, ProfileUpdateRequest request);
+
+     void changePassword(String email,String currentPassword,String newPassword);
+     void deleteAccount(String email, String password);
 }

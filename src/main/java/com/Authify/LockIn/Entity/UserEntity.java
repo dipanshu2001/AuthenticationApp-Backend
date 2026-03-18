@@ -19,7 +19,7 @@ import java.sql.Timestamp;
 public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
     @Column(unique = true)
     private String userID;
     private String name;
@@ -28,9 +28,11 @@ public class UserEntity {
     private String password;
     private String verifyOtp;
     private boolean isAccountVerified;
-    private long verifyOtpExpiredAt;
+    private Long verifyOtpExpiredAt;
+    private int verifyOtpAttempts;
     private String resetOtp;
-    private long resetOtpExpiredAt;
+    private Long resetOtpExpiredAt;
+    private int resetOtpAttempts;
     @CreationTimestamp
     @Column(updatable = false)
     private Timestamp createdAt;

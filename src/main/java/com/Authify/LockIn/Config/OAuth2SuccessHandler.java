@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -47,28 +48,44 @@ private final RefreshTokenService refreshTokenService;
                         .authorities(user.getRole())
                         .build()
         );
+
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserID());
 
         ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(false)
                 .path("/")
                 .maxAge(Duration.ofMinutes(15))
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                 .httpOnly(true)
-                .secure(true)
-                .path("/auth")
+                .secure(false)
+                .path("/api/v1.0/auth")
                 .maxAge(Duration.ofDays(7))
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
-        // Add both cookies
         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-        response.sendRedirect("http://localhost:5173/oauth-success");
+
+        // ← Invalidate the OAuth2 session so only JWT is used going forward
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
+
+        // Clear the JSESSIONID cookie so browser doesn't send it on future requests
+        ResponseCookie clearSession = ResponseCookie.from("JSESSIONID", "")
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, clearSession.toString());
+
+        response.sendRedirect("http://localhost:5173/#/oauth-success");
     }
 
 }
