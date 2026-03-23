@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -24,11 +25,19 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
-private final RefreshTokenService refreshTokenService;
+    private final JwtUtil             jwtUtil;
+    private final UserRepository      userRepository;
+    private final RefreshTokenService refreshTokenService;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -53,39 +62,36 @@ private final RefreshTokenService refreshTokenService;
 
         ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(Duration.ofMinutes(15))
-                .sameSite("Lax")
+             //   .sameSite("Lax")
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken.getToken())
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .path("/api/v1.0/auth")
                 .maxAge(Duration.ofDays(7))
-                .sameSite("Lax")
+              //  .sameSite("Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        // ← Invalidate the OAuth2 session so only JWT is used going forward
         jakarta.servlet.http.HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
 
-        // Clear the JSESSIONID cookie so browser doesn't send it on future requests
         ResponseCookie clearSession = ResponseCookie.from("JSESSIONID", "")
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+             //   .sameSite("Lax")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, clearSession.toString());
 
-        response.sendRedirect("http://localhost:5173/#/oauth-success");
+        response.sendRedirect(frontendUrl + "/#/oauth-success");
     }
-
 }

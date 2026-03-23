@@ -15,11 +15,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
     private static final long REFRESH_TOKEN_VALIDITY = 7L * 24 * 60 * 60 * 1000;
     @Override
     public RefreshToken createRefreshToken(String userId) {
-        String randomToken = UUID.randomUUID().toString() + UUID.randomUUID();
+        String token = UUID.randomUUID().toString() + UUID.randomUUID();
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .userId(userId)
-                .token(randomToken)
+                .token(token)
                 .expiresAt(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY)
                 .revoked(false)
                 .build();
@@ -44,6 +44,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService{
     }
 
     @Override
+    @Transactional
     public void revokeAllForUser(String userId) {
         refreshTokenRepository.deleteByUserId(userId);
     }
